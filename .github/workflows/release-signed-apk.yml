@@ -34,38 +34,57 @@ jobs:
           instabox resume "$MACHINE_ID" || true
 
           echo ">>> Setting up and starting runami-add-rsa runner..."
-          cat << 'EOF' | instabox exec "$MACHINE_ID" --stdin -- bash
+          cat << 'EOF' | instabox exec "$MACHINE_ID" --timeout 300 --stream --stdin -- bash
             set -euo pipefail
-            mkdir -p /data/actions-runner/Add-RSA
-            cd /data/actions-runner/Add-RSA
+            RUNNER_DIR="/data/actions-runner/Add-RSA"
 
-            if [ ! -f config.sh ]; then
-              echo "Copying runner binaries from Ame-Player..."
-              cp -rn /data/actions-runner/Ame-Player/* ./ || true
-              rm -f .runner .credentials* .env
-            fi
+            if [ ! -f "$RUNNER_DIR/.runner" ]; then
+              echo ">>> Initializing runner directory at $RUNNER_DIR..."
+              rm -rf "$RUNNER_DIR"
+              mkdir -p "$RUNNER_DIR"
+              cd "$RUNNER_DIR"
 
-            if [ -d /opt/actions-runner/externals ] && [ ! -e externals ]; then
-              ln -sf /opt/actions-runner/externals ./externals
-            fi
+              echo ">>> Copying runner core binaries from Ame-Player (skipping _work)..."
+              if command -v rsync > /dev/null 2>&1; then
+                rsync -a --exclude='_work' --exclude='_diag' --exclude='.runner*' --exclude='.credentials*' /data/actions-runner/Ame-Player/ "$RUNNER_DIR/"
+              else
+                cp -r /data/actions-runner/Ame-Player/bin ./
+                cp /data/actions-runner/Ame-Player/*.sh ./
+                if [ -d /opt/actions-runner/externals ]; then
+                  ln -sf /opt/actions-runner/externals ./externals
+                elif [ -d /data/actions-runner/Ame-Player/externals ]; then
+                  cp -r /data/actions-runner/Ame-Player/externals ./
+                fi
+              fi
 
-            if [ ! -f .runner ]; then
-              echo "Generating registration token via runami gh..."
+              if [ -d /opt/actions-runner/externals ] && [ ! -e "$RUNNER_DIR/externals" ]; then
+                ln -sf /opt/actions-runner/externals "$RUNNER_DIR/externals"
+              fi
+
+              echo ">>> Obtaining registration token via runami gh CLI..."
               REG_TOKEN=$(gh api -X POST /repos/Akiyama-25/Add-RSA/actions/runners/registration-token --jq '.token')
-              echo "Configuring runner for Add-RSA..."
+
+              echo ">>> Configuring actions-runner for Add-RSA..."
               ./config.sh --url https://github.com/Akiyama-25/Add-RSA \
                 --token "$REG_TOKEN" \
                 --name runami-add-rsa \
                 --labels self-hosted,Linux,X64,instabox,instabox-medium,android-builder \
                 --unattended \
                 --replace
+
+              echo ">>> Installing runner service..."
               sudo ./svc.sh install user || true
+            else
+              cd "$RUNNER_DIR"
             fi
 
+            echo ">>> Starting runner service..."
             sudo ./svc.sh start || sudo ./svc.sh restart || true
             sleep 5
             sudo ./svc.sh status || true
-            echo "Runner bootstrap step completed."
+            echo ">>> Runner status on GitHub:"
+            gh api /repos/Akiyama-25/Add-RSA/actions/runners --jq '.runners[] | {name, status, labels: [.labels[].name]}'
+            echo ">>> Runner bootstrap finished successfully."
           EOF
 
   build-release:
