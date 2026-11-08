@@ -22,7 +22,6 @@ jobs:
       - name: Setup InstaBox Runner for Add-RSA
         env:
           INSTABOX_API_KEY: ${{ secrets.INSTABOX_API || vars.INSTABOX_API || secrets.INSTABOX_API_KEY }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           echo ">>> Installing InstaBox CLI..."
@@ -33,64 +32,40 @@ jobs:
           echo ">>> Resuming/Waking InstaBox machine: $MACHINE_ID..."
           instabox resume "$MACHINE_ID" || true
 
-          echo ">>> Inspecting runami actions-runner structure..."
-          instabox exec "$MACHINE_ID" -- ls -la /data/actions-runner || true
-          instabox exec "$MACHINE_ID" -- systemctl list-units --type=service | grep -i runner || true
+          echo ">>> Setting up and starting runami-add-rsa runner..."
+          cat << 'EOF' | instabox exec "$MACHINE_ID" --stdin -- bash
+            set -euo pipefail
+            mkdir -p /data/actions-runner/Add-RSA
+            cd /data/actions-runner/Add-RSA
 
-          # Check if Add-RSA runner is already registered on GitHub
-          RUNNER_COUNT=$(gh api /repos/Akiyama-25/Add-RSA/actions/runners --jq '.total_count')
-          echo "Current Add-RSA runner count: $RUNNER_COUNT"
+            if [ ! -f config.sh ]; then
+              echo "Copying runner binaries from Ame-Player..."
+              cp -rn /data/actions-runner/Ame-Player/* ./ || true
+              rm -f .runner .credentials* .env
+            fi
 
-          if [ "$RUNNER_COUNT" -eq 0 ]; then
-            echo ">>> Registering new runner for Add-RSA on runami..."
-            REG_TOKEN=$(gh api -X POST /repos/Akiyama-25/Add-RSA/actions/runners/registration-token --jq '.token')
-            
-            # Setup runner directory on runami
-            instabox exec "$MACHINE_ID" -- "
-              set -euo pipefail
-              mkdir -p /data/actions-runner/add-rsa
-              cd /data/actions-runner/add-rsa
+            if [ -d /opt/actions-runner/externals ] && [ ! -e externals ]; then
+              ln -sf /opt/actions-runner/externals ./externals
+            fi
 
-              # If runner binary does not exist in add-rsa folder, copy from an existing runner
-              if [ ! -f config.sh ]; then
-                EXISTING=\$(find /data/actions-runner -maxdepth 2 -name 'config.sh' -not -path '*/add-rsa/*' | head -n 1)
-                if [ -n \"\$EXISTING\" ]; then
-                  SOURCE_DIR=\$(dirname \"\$EXISTING\")
-                  echo 'Copying runner binaries from ' \$SOURCE_DIR '...'
-                  cp -rn \"\$SOURCE_DIR\"/* ./ || true
-                  rm -f .runner .credentials* .env
-                else
-                  echo 'Downloading fresh actions-runner...'
-                  curl -o actions-runner.tar.gz -L https://github.com/actions/runner/releases/download/v2.338.2/actions-runner-linux-x64-2.338.2.tar.gz
-                  tar xzf actions-runner.tar.gz
-                fi
-              fi
-
-              # Link externals if available to save space
-              if [ -d /opt/actions-runner/externals ] && [ ! -e externals ]; then
-                ln -sf /opt/actions-runner/externals ./externals
-              fi
-
-              # Configure runner for Add-RSA
-              echo 'Configuring runner...'
+            if [ ! -f .runner ]; then
+              echo "Generating registration token via runami gh..."
+              REG_TOKEN=$(gh api -X POST /repos/Akiyama-25/Add-RSA/actions/runners/registration-token --jq '.token')
+              echo "Configuring runner for Add-RSA..."
               ./config.sh --url https://github.com/Akiyama-25/Add-RSA \
-                --token $REG_TOKEN \
+                --token "$REG_TOKEN" \
                 --name runami-add-rsa \
                 --labels self-hosted,Linux,X64,instabox,instabox-medium,android-builder \
                 --unattended \
                 --replace
-
-              # Install and start systemd service
               sudo ./svc.sh install user || true
-              sudo ./svc.sh start || sudo ./svc.sh restart || true
-              sleep 3
-              sudo ./svc.sh status || true
-            "
-          fi
+            fi
 
-          echo ">>> Waiting 5s for runner to report online..."
-          sleep 5
-          gh api /repos/Akiyama-25/Add-RSA/actions/runners --jq '.runners[] | {name, status, labels: [.labels[].name]}'
+            sudo ./svc.sh start || sudo ./svc.sh restart || true
+            sleep 5
+            sudo ./svc.sh status || true
+            echo "Runner bootstrap step completed."
+          EOF
 
   build:
     name: Build Signed Release APK
