@@ -37,7 +37,7 @@ jobs:
   build:
     name: Build Signed Release APK
     needs: wake-runner
-    runs-on: [self-hosted, android-builder]
+    runs-on: instabox-medium
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4

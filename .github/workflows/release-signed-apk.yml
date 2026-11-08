@@ -38,7 +38,7 @@ jobs:
   build-release:
     name: Build, Sign, and Publish Release
     needs: wake-runner
-    runs-on: [self-hosted, android-builder]
+    runs-on: instabox-medium
     steps:
       - name: Select Release Ref
         id: ref
