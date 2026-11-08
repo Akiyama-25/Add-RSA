@@ -1,0 +1,66 @@
+<resources>
+    <string name="app_name">Add RSA</string>
+    <string name="app_tagline">为本地签发的 RKP Keybox 快速补全 AOSP RSA 证书</string>
+
+    <string name="tab_blend">快捷补全</string>
+    <string name="tab_rsa">RSA 密钥</string>
+    <string name="tab_about">安全架构</string>
+
+    <string name="section_quick_blend">Keybox 混合补全</string>
+    <string name="desc_quick_blend">传入 Duck ToolBox 本地签发的 RKP Keybox（ECDSA），自动混合内置 AES-256 加密的 RSA 证书，导出可直接通过 Duck Detector TEE 检测的完整 Keybox。</string>
+    <string name="btn_select_ecdsa">选择 ECDSA Keybox (.xml)</string>
+    <string name="btn_change_ecdsa">更换文件</string>
+    <string name="or_drop_share">支持从其他应用通过系统分享直接传入 .xml 文件</string>
+
+    <string name="card_ecdsa_title">已载入 ECDSA Keybox</string>
+    <string name="label_device_id">设备 ID</string>
+    <string name="label_algo">算法类型</string>
+    <string name="label_cert_count">证书链层级</string>
+    <string name="label_status">状态</string>
+    <string name="status_ready_to_blend">可直接补全混合</string>
+    <string name="status_rsa_present">已包含 RSA 节点（可覆盖）</string>
+    <string name="status_empty">尚未载入 Keybox 文件</string>
+
+    <string name="card_rsa_active_title">当前生效的 RSA 证书</string>
+    <string name="label_rsa_source">来源</string>
+    <string name="default_aosp_name">默认 AOSP 软件认证根</string>
+    <string name="badge_aes_encrypted">AES-256 加密保护</string>
+
+    <string name="btn_blend_export">混合并导出</string>
+    <string name="btn_share">系统分享 XML</string>
+    <string name="btn_save_file">保存至本地文件</string>
+    <string name="btn_copy_clipboard">复制到剪贴板</string>
+    <string name="btn_purge_now">立即卸载内存缓存</string>
+
+    <string name="dialog_blend_success_title">混合导出成功</string>
+    <string name="dialog_blend_success_msg">ECDSA 证书与 RSA 证书已成功合成标准 Keybox。本次导出的 ECDSA 内存缓存将立即卸载销毁。</string>
+
+    <string name="section_rsa_management">APP 内储存的 RSA 证书</string>
+    <string name="desc_rsa_management">所有保存在本 APP 内的 RSA 证书均强制经过 AES-256-GCM 算法加密存储。</string>
+    <string name="btn_import_custom_rsa">导入自定义 RSA (.xml)</string>
+    <string name="dialog_import_rsa_title">导入自定义 RSA 密钥</string>
+    <string name="input_rsa_alias_label">证书别名 / 备注名称</string>
+    <string name="btn_import_confirm">加密并保存</string>
+    <string name="btn_cancel">取消</string>
+    <string name="btn_set_active">设为默认使用</string>
+    <string name="btn_delete">删除</string>
+    <string name="confirm_delete_rsa">确认删除此 RSA 密钥吗？</string>
+
+    <string name="section_security_privacy">安全与隐私保护架构</string>
+    <string name="security_ecdsa_title">ECDSA 证书零落盘保护</string>
+    <string name="security_ecdsa_desc">用户的 ECDSA 证书绝不硬编码，不写入任何持久化储存。所有 ECDSA 凭据仅在瞬时内存中参与拼装转换，混合导出完成后立即卸载并销毁内存缓存。</string>
+    <string name="security_rsa_title">AES-256-GCM 高强度静态加密</string>
+    <string name="security_rsa_desc">无论是预置编码的 AOSP 默认证书，还是用户后续导入的自定义 RSA 证书，在储存状态下均经过 AES-256-GCM 强力加密，杜绝明文留存。</string>
+    <string name="privacy_open_source">纯本地运行 &amp; 开源无联网</string>
+    <string name="privacy_open_source_desc">本程序完全离线运行，未申请任何网络权限，无任何第三方分析与埋点代码，安全透明。</string>
+
+    <string name="error_invalid_xml">XML 解析失败：非合法 Keybox 文件格式</string>
+    <string name="error_no_ecdsa">在该 XML 文件中未找到 ECDSA 证书节点</string>
+    <string name="error_no_rsa">所选文件中未找到有效的 RSA 密钥节点</string>
+    <string name="toast_copied">已复制混合 Keybox 到剪贴板</string>
+    <string name="toast_purged">ECDSA 内存缓存已安全卸载清空</string>
+    <string name="toast_rsa_imported">自定义 RSA 证书已完成 AES-256 加密保存</string>
+    <string name="toast_rsa_deleted">已删除指定的 RSA 证书</string>
+    <string name="toast_save_success">混合好的 Keybox 已保存成功</string>
+    <string name="toast_blend_first">请先传入或选择 ECDSA Keybox 文件</string>
+</resources>

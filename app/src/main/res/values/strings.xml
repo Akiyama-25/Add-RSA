@@ -1,0 +1,66 @@
+<resources>
+    <string name="app_name">Add RSA</string>
+    <string name="app_tagline">Blend AOSP RSA into Local RKP Keybox for TEE Simulation</string>
+
+    <string name="tab_blend">Quick Blend</string>
+    <string name="tab_rsa">RSA Keys</string>
+    <string name="tab_about">Security</string>
+
+    <string name="section_quick_blend">Quick Completion</string>
+    <string name="desc_quick_blend">Import a Local RKP Keybox (ECDSA), auto-inject an encrypted RSA key, and export a complete TEE-compliant Keybox.</string>
+    <string name="btn_select_ecdsa">Select ECDSA Keybox (.xml)</string>
+    <string name="btn_change_ecdsa">Change File</string>
+    <string name="or_drop_share">Or share any Keybox XML from other apps to Add RSA directly</string>
+
+    <string name="card_ecdsa_title">ECDSA Keybox Loaded</string>
+    <string name="label_device_id">Device ID</string>
+    <string name="label_algo">Algorithm</string>
+    <string name="label_cert_count">Certificates</string>
+    <string name="label_status">Status</string>
+    <string name="status_ready_to_blend">Ready to blend</string>
+    <string name="status_rsa_present">RSA block already present</string>
+    <string name="status_empty">No Keybox loaded</string>
+
+    <string name="card_rsa_active_title">Active RSA Key</string>
+    <string name="label_rsa_source">Source</string>
+    <string name="default_aosp_name">AOSP Software Attestation Root</string>
+    <string name="badge_aes_encrypted">AES-256 Protected</string>
+
+    <string name="btn_blend_export">Blend &amp; Export</string>
+    <string name="btn_share">Share XML</string>
+    <string name="btn_save_file">Save to File</string>
+    <string name="btn_copy_clipboard">Copy to Clipboard</string>
+    <string name="btn_purge_now">Purge Memory Cache</string>
+
+    <string name="dialog_blend_success_title">Blended Successfully</string>
+    <string name="dialog_blend_success_msg">ECDSA and RSA certificates have been merged into a complete Keybox. Temporary ECDSA cache will be purged.</string>
+
+    <string name="section_rsa_management">Stored RSA Keys</string>
+    <string name="desc_rsa_management">All RSA keys stored inside the app are protected with AES-256-GCM encryption.</string>
+    <string name="btn_import_custom_rsa">Import Custom RSA (.xml)</string>
+    <string name="dialog_import_rsa_title">Import Custom RSA Key</string>
+    <string name="input_rsa_alias_label">Key Name / Alias</string>
+    <string name="btn_import_confirm">Encrypt &amp; Save</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_set_active">Set Active</string>
+    <string name="btn_delete">Delete</string>
+    <string name="confirm_delete_rsa">Delete this stored RSA key?</string>
+
+    <string name="section_security_privacy">Security &amp; Privacy Architecture</string>
+    <string name="security_ecdsa_title">Zero-Disk Footprint for ECDSA</string>
+    <string name="security_ecdsa_desc">Your personal ECDSA certificates are never hardcoded or written to disk. All ECDSA operations occur strictly in volatile memory and are purged immediately after export.</string>
+    <string name="security_rsa_title">AES-256-GCM Storage Encryption</string>
+    <string name="security_rsa_desc">All stored RSA credentials (including the embedded AOSP certificate and custom imported keys) are encrypted with AES-256-GCM at rest.</string>
+    <string name="privacy_open_source">Open Source &amp; 100% Local</string>
+    <string name="privacy_open_source_desc">This application executes completely on your device with no network permissions, no telemetry, and zero tracking.</string>
+
+    <string name="error_invalid_xml">Failed to parse XML: Invalid Keybox format</string>
+    <string name="error_no_ecdsa">No ECDSA key found in this XML file</string>
+    <string name="error_no_rsa">No RSA key found in the selected file</string>
+    <string name="toast_copied">Copied to clipboard</string>
+    <string name="toast_purged">ECDSA memory cache purged</string>
+    <string name="toast_rsa_imported">Custom RSA key encrypted and saved</string>
+    <string name="toast_rsa_deleted">RSA key deleted</string>
+    <string name="toast_save_success">Keybox saved successfully</string>
+    <string name="toast_blend_first">Please load an ECDSA Keybox first</string>
+</resources>

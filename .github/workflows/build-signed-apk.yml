@@ -1,0 +1,184 @@
+name: Build Signed APK
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wake-runner:
+    name: Wake InstaBox Runner
+    runs-on: ubuntu-latest
+    environment: RSA
+    steps:
+      - name: Wake runami machine via InstaBox API
+        continue-on-error: true
+        env:
+          INSTABOX_API_KEY: ${{ secrets.INSTABOX_API || vars.INSTABOX_API || secrets.INSTABOX_API_KEY }}
+        run: |
+          if [ -n "$INSTABOX_API_KEY" ]; then
+            echo ">>> Sending wake request to InstaBox for machine (m_agqzg6p6up64vdycn4j2n4kpyu)..."
+            curl -s -X POST "https://api.instabox.sh/v1/machines/m_agqzg6p6up64vdycn4j2n4kpyu/wake" \
+              -H "Authorization: Bearer $INSTABOX_API_KEY" || true
+            echo ">>> Waiting 12s for runner daemon to connect..."
+            sleep 12
+          else
+            echo "INSTABOX_API_KEY is not set, skipping wake."
+          fi
+
+  build:
+    name: Build Signed Release APK
+    needs: wake-runner
+    runs-on: [self-hosted, android-builder]
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android Platform SDK 37
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f -print -quit || true)"
+          if [ -z "$SDKMANAGER" ]; then
+            SDKMANAGER="$ANDROID_HOME/tools/bin/sdkmanager"
+          fi
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          if "$SDKMANAGER" --install "platforms;android-37" > /tmp/sdk.log 2>&1; then
+            echo "Installed platforms;android-37 directly"
+          else
+            echo "Direct install of android-37 failed, checking platforms;android-37.0"
+            "$SDKMANAGER" --install "platforms;android-37.0" > /tmp/sdk.log 2>&1 || true
+            P37="${ANDROID_HOME}/platforms/android-37"
+            P370="${ANDROID_HOME}/platforms/android-37.0"
+            if [ -d "$P370" ] && [ ! -d "$P37" ]; then
+              cp -r "$P370" "$P37"
+              sed -i 's/PlatformVersion=37\.0/PlatformVersion=37/' "$P37/source.properties" || true
+              sed -i 's/AndroidVersion.ApiLevel=37\.0/AndroidVersion.ApiLevel=37/' "$P37/source.properties" || true
+            fi
+          fi
+          ls -la "${ANDROID_HOME}/platforms/"
+
+      - name: Restore Signing Keystore Cache
+        id: cache-signing-keystore
+        uses: actions/cache@v4
+        with:
+          path: .signing_cache
+          key: add-rsa-signing-keystore-v1
+
+      - name: Setup Persistent Signing Keystore
+        id: keystore
+        env:
+          SECRET_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          SECRET_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          SECRET_ALIAS_NAME: ${{ secrets.ALIAS_NAME }}
+          SECRET_ALIAS_PASS: ${{ secrets.ALIAS_PASS }}
+        run: |
+          set -euo pipefail
+          echo "=== Setting up Persistent Signing Keystore ==="
+          mkdir -p .signing_cache keystore_backup
+
+          DEFAULT_KEYSTORE_PASS="add_rsa_release_2026"
+          DEFAULT_ALIAS_NAME="add_rsa"
+          DEFAULT_ALIAS_PASS="add_rsa_release_2026"
+
+          if [ -n "$SECRET_KEYSTORE_BASE64" ]; then
+            echo "Priority 1: Restoring keystore from GitHub Secrets..."
+            echo "$SECRET_KEYSTORE_BASE64" | base64 -d > release.keystore
+            KEYSTORE_PASS="${SECRET_KEYSTORE_PASS:-$DEFAULT_KEYSTORE_PASS}"
+            ALIAS_NAME="${SECRET_ALIAS_NAME:-$DEFAULT_ALIAS_NAME}"
+            ALIAS_PASS="${SECRET_ALIAS_PASS:-$KEYSTORE_PASS}"
+          elif [ -f .signing_cache/release.keystore ]; then
+            echo "Priority 2: Restoring persistent keystore from Actions Cache..."
+            cp .signing_cache/release.keystore release.keystore
+            if [ -f .signing_cache/credentials.env ]; then
+              source .signing_cache/credentials.env
+            else
+              KEYSTORE_PASS="$DEFAULT_KEYSTORE_PASS"
+              ALIAS_NAME="$DEFAULT_ALIAS_NAME"
+              ALIAS_PASS="$DEFAULT_ALIAS_PASS"
+            fi
+          else
+            echo "Priority 3: Generating persistent baseline release.keystore..."
+            KEYSTORE_PASS="$DEFAULT_KEYSTORE_PASS"
+            ALIAS_NAME="$DEFAULT_ALIAS_NAME"
+            ALIAS_PASS="$DEFAULT_ALIAS_PASS"
+            keytool -genkeypair -v \
+              -keystore release.keystore \
+              -alias "${ALIAS_NAME}" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "${KEYSTORE_PASS}" \
+              -keypass "${ALIAS_PASS}" \
+              -dname "CN=Add RSA, OU=Release, O=Akari, C=JP"
+          fi
+
+          # Synchronize active keystore and credentials to cache
+          cp release.keystore .signing_cache/release.keystore
+          {
+            echo "KEYSTORE_PASS=${KEYSTORE_PASS}"
+            echo "ALIAS_NAME=${ALIAS_NAME}"
+            echo "ALIAS_PASS=${ALIAS_PASS}"
+          } > .signing_cache/credentials.env
+
+          echo "KEYSTORE_PASS=${KEYSTORE_PASS}" >> local.properties
+          echo "ALIAS_NAME=${ALIAS_NAME}" >> local.properties
+          echo "ALIAS_PASS=${ALIAS_PASS}" >> local.properties
+
+          echo "KEYSTORE_PASS=${KEYSTORE_PASS}" >> $GITHUB_ENV
+          echo "ALIAS_NAME=${ALIAS_NAME}" >> $GITHUB_ENV
+          echo "ALIAS_PASS=${ALIAS_PASS}" >> $GITHUB_ENV
+
+          # Prepare keystore backup artifact and base64 export
+          cp release.keystore keystore_backup/
+          base64 -w 0 release.keystore > keystore_backup/keystore_base64.txt
+          {
+            echo "Keystore File: release.keystore"
+            echo "Alias: ${ALIAS_NAME}"
+            echo "Keystore Password: ${KEYSTORE_PASS}"
+            echo "Key Password: ${ALIAS_PASS}"
+          } > keystore_backup/keystore_info.txt
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Assemble Release APK
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Prepare Output APK
+        run: |
+          mkdir -p build-outputs
+          APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          test -f "$APK_FILE"
+          cp "$APK_FILE" build-outputs/Add-RSA-release.apk
+          cd build-outputs
+          sha256sum Add-RSA-release.apk > SHA256SUMS.txt
+          ls -lh
+
+      - name: Upload Signed Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Add-RSA-release-apk
+          path: build-outputs/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Keystore Backup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Add-RSA-signing-keystore-backup
+          path: keystore_backup/*
+          retention-days: 30
