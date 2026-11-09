@@ -17,6 +17,10 @@ android {
             val proc = ProcessBuilder("git", "rev-parse", "--short", "HEAD").start()
             proc.inputStream.bufferedReader().readText().trim()
         }.getOrDefault("")
+        val gitCommitTimestamp = runCatching {
+            val proc = ProcessBuilder("git", "log", "-1", "--format=%ct").start()
+            proc.inputStream.bufferedReader().readText().trim().toLong() * 1000L
+        }.getOrDefault(System.currentTimeMillis())
         val buildRunNumber = System.getenv("GITHUB_RUN_NUMBER")
         val envVersionName = System.getenv("APP_VERSION_NAME") ?: System.getenv("RELEASE_TAG")
         val envReleaseTag = System.getenv("LATEST_RELEASE_TAG") ?: System.getenv("RELEASE_TAG")
@@ -45,6 +49,7 @@ android {
         versionName = resolvedVersionName
 
         buildConfigField("String", "GIT_COMMIT_SHA", "\"$gitCommitSha\"")
+        buildConfigField("Long", "BUILD_TIME_MILLIS", "${gitCommitTimestamp}L")
         buildConfigField("String", "GITHUB_RUN_NUMBER", "\"${buildRunNumber ?: ""}\"")
         buildConfigField("String", "BUILT_LATEST_RELEASE_TAG", "\"$latestReleaseTag\"")
     }
