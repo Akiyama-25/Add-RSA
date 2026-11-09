@@ -38,7 +38,7 @@ android {
             else -> "release-1"
         }
 
-        val configVersionCode = 1
+        val configVersionCode = 2
         val envVersionCode = System.getenv("APP_VERSION_CODE")?.toIntOrNull()
         versionCode = envVersionCode ?: (buildRunNumber?.toIntOrNull() ?: configVersionCode)
         versionName = resolvedVersionName
