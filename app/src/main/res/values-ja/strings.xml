@@ -1,66 +1,96 @@
 <resources>
     <string name="app_name">Add RSA</string>
-    <string name="app_tagline">ローカル発行の RKP Keybox に AOSP RSA 証明書を高速補完</string>
 
+    <!-- ボトムナビゲーション -->
     <string name="tab_blend">クイック補完</string>
-    <string name="tab_rsa">RSA 鍵管理</string>
-    <string name="tab_about">セキュリティ</string>
+    <string name="tab_rsa">RSA 鍵</string>
+    <string name="tab_settings">設定</string>
 
+    <!-- セクションヘッダー -->
     <string name="section_quick_blend">Keybox 補完・結合</string>
-    <string name="desc_quick_blend">Duck ToolBox でローカル発行された RKP Keybox（ECDSA）を読み込み、AES-256 暗号化された RSA 証明書を自動補完して Duck Detector の TEE 検査を通過できる完全な Keybox を生成します。</string>
+    <string name="section_rsa_management">保存された RSA 鍵</string>
+    <string name="section_preferences">一般設定</string>
+    <string name="section_security">セキュリティとプライバシー</string>
+    <string name="section_about">アプリについて</string>
+
+    <!-- クイック補完画面 -->
     <string name="btn_select_ecdsa">ECDSA Keybox (.xml) を選択</string>
     <string name="btn_change_ecdsa">ファイルを変更</string>
-    <string name="or_drop_share">他のアプリからシステム共有で .xml ファイルを直接転送可能</string>
+    <string name="or_drop_share">直接開くかシステム共有から .xml を連携可能</string>
 
-    <string name="card_ecdsa_title">読み込み済み ECDSA Keybox</string>
+    <string name="card_ecdsa_title">ECDSA Keybox</string>
     <string name="label_device_id">デバイス ID</string>
     <string name="label_algo">アルゴリズム</string>
     <string name="label_cert_count">証明書チェーン数</string>
-    <string name="label_status">ステータス</string>
-    <string name="status_ready_to_blend">結合の準備完了</string>
-    <string name="status_rsa_present">RSA ノードは既に存在します（上書き可能）</string>
-    <string name="status_empty">Keybox ファイルが読み込まれていません</string>
+    <string name="status_ready_to_blend">準備完了</string>
+    <string name="status_rsa_present">RSA ノード含有</string>
+    <string name="status_empty">未読み込み</string>
 
-    <string name="card_rsa_active_title">現在有効な RSA 証明書</string>
-    <string name="label_rsa_source">ソース</string>
-    <string name="default_aosp_name">デフォルト AOSP ソフトウェア認証ルート</string>
-    <string name="badge_aes_encrypted">AES-256 暗号化保護</string>
+    <string name="card_rsa_active_title">有効な RSA 証明書</string>
+    <string name="default_aosp_name">AOSP デフォルトルート</string>
+    <string name="badge_aes_encrypted">AES-256</string>
 
     <string name="btn_blend_export">結合してエクスポート</string>
-    <string name="btn_share">XML を共有</string>
+    <string name="btn_share">共有</string>
     <string name="btn_save_file">ファイルに保存</string>
     <string name="btn_copy_clipboard">クリップボードにコピー</string>
-    <string name="btn_purge_now">メモリキャッシュを破棄</string>
+    <string name="btn_purge_now">メモリ破棄</string>
 
+    <!-- 結合完了ダイアログ -->
     <string name="dialog_blend_success_title">結合・エクスポート完了</string>
-    <string name="dialog_blend_success_msg">ECDSA 証明書と RSA 証明書が正常に結合されました。一時保持されていた ECDSA メモリキャッシュは直ちに破棄されます。</string>
+    <string name="dialog_blend_success_msg">Keybox の結合が完了しました。ECDSA キャッシュは破棄されました。</string>
 
-    <string name="section_rsa_management">保存された RSA 証明書</string>
-    <string name="desc_rsa_management">アプリ内に保存されるすべての RSA 鍵は、AES-256-GCM により暗号化されて保護されています。</string>
+    <!-- RSA 鍵管理 -->
     <string name="btn_import_custom_rsa">カスタム RSA (.xml) をインポート</string>
-    <string name="dialog_import_rsa_title">カスタム RSA 鍵のインポート</string>
+    <string name="dialog_import_rsa_title">RSA 鍵のインポート</string>
     <string name="input_rsa_alias_label">証明書の別名 / メモ</string>
     <string name="btn_import_confirm">暗号化して保存</string>
     <string name="btn_cancel">キャンセル</string>
-    <string name="btn_set_active">デフォルトとして使用</string>
+    <string name="btn_close">閉じる</string>
+    <string name="btn_back">戻る</string>
+    <string name="btn_set_active">デフォルトにする</string>
     <string name="btn_delete">削除</string>
-    <string name="confirm_delete_rsa">この RSA 鍵を削除してもよろしいですか？</string>
 
-    <string name="section_security_privacy">セキュリティとプライバシー設計</string>
-    <string name="security_ecdsa_title">ECDSA 証明書の完全メモリ一時保持</string>
-    <string name="security_ecdsa_desc">ユーザーの ECDSA 証明書がハードコードされたり、ストレージに永続保存されることは一切ありません。変換処理中のみメモリ上で一時的に扱われ、エクスポート完了時に直ちに完全破棄されます。</string>
-    <string name="security_rsa_title">AES-256-GCM 暗号化ストレージ</string>
-    <string name="security_rsa_desc">プリセットされた AOSP 証明書およびインポートされたカスタム RSA 鍵は、すべて AES-256-GCM で暗号化された状態で保存され、平文のままディスクに残ることはありません。</string>
-    <string name="privacy_open_source">完全オフライン動作 &amp; オープンソース</string>
-    <string name="privacy_open_source_desc">本アプリは完全ローカルで動作し、ネットワーク権限を一切要求せず、外部への通信やテレメトリも行いません。</string>
+    <!-- 言語設定 -->
+    <string name="setting_language">言語設定</string>
+    <string name="setting_language_desc">アプリの表示言語を選択</string>
+    <string name="lang_system_default">システム標準</string>
+    <string name="lang_zh_cn">简体中文</string>
+    <string name="lang_zh_hk">繁體中文 (香港)</string>
+    <string name="lang_zh_tw">繁體中文 (台灣)</string>
+    <string name="lang_en">English</string>
+    <string name="lang_ja">日本語</string>
 
+    <!-- アップデート確認 -->
+    <string name="setting_update">アップデート確認</string>
+    <string name="setting_update_desc">バージョン確認と更新チャンネル</string>
+    <string name="update_channel_label">更新チャンネル</string>
+    <string name="channel_release">Release 正式版</string>
+    <string name="channel_action">Action 自動ビルド版</string>
+    <string name="btn_check_update">今すぐ確認</string>
+    <string name="update_checking">アップデートを確認中…</string>
+    <string name="update_latest">最新バージョンです</string>
+    <string name="update_available">新しいバージョンが見つかりました</string>
+    <string name="update_btn_download">ダウンロード</string>
+    <string name="update_btn_view">詳細を見る</string>
+    <string name="label_current_version">現在のバージョン</string>
+    <string name="label_built_release_tag">ベース Release Tag</string>
+    <string name="label_channel">現在のチャンネル</string>
+
+    <!-- セキュリティ特性 -->
+    <string name="security_ecdsa_title">ECDSA 完全メモリ一時保持</string>
+    <string name="security_ecdsa_desc">ECDSA 証明書はメモリ上でのみ一時保持され、エクスポート後に直ちに完全破棄されます。</string>
+    <string name="security_rsa_title">AES-256 暗号化ストレージ</string>
+    <string name="security_rsa_desc">プリセット AOSP 及びインポートした RSA 鍵は AES-256-GCM で暗号化保管されます。</string>
+    <string name="privacy_open_source">完全オフライン &amp; オープンソース</string>
+    <string name="privacy_open_source_desc">コア処理は 100% ローカルで実行され、外部通信や追跡は一切行いません。</string>
+
+    <!-- エラー・通知 -->
     <string name="error_invalid_xml">XML 解析エラー：無効な Keybox 形式です</string>
-    <string name="error_no_ecdsa">この XML ファイル内に ECDSA 証明書が見つかりませんでした</string>
-    <string name="error_no_rsa">選択したファイルに有効な RSA 鍵が見つかりませんでした</string>
-    <string name="toast_copied">結合された Keybox をクリップボードにコピーしました</string>
-    <string name="toast_purged">ECDSA メモリキャッシュを安全に破棄しました</string>
-    <string name="toast_rsa_imported">カスタム RSA 鍵を AES-256 暗号化して保存しました</string>
+    <string name="toast_copied">Keybox をクリップボードにコピーしました</string>
+    <string name="toast_purged">ECDSA メモリキャッシュを破棄しました</string>
+    <string name="toast_rsa_imported">RSA 鍵を暗号化保存しました</string>
     <string name="toast_rsa_deleted">指定された RSA 鍵を削除しました</string>
-    <string name="toast_save_success">結合された Keybox を保存しました</string>
-    <string name="toast_blend_first">先に ECDSA Keybox ファイルを読み込んでください</string>
+    <string name="toast_save_success">Keybox を保存しました</string>
+    <string name="toast_blend_first">先に ECDSA Keybox を読み込んでください</string>
 </resources>

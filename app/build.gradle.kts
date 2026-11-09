@@ -12,17 +12,38 @@ android {
         applicationId = "Akari.Add.RSA"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
 
         val gitCommitSha = runCatching {
             val proc = ProcessBuilder("git", "rev-parse", "--short", "HEAD").start()
             proc.inputStream.bufferedReader().readText().trim()
         }.getOrDefault("")
-        val buildRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
+        val buildRunNumber = System.getenv("GITHUB_RUN_NUMBER")
+        val envVersionName = System.getenv("APP_VERSION_NAME") ?: System.getenv("RELEASE_TAG")
+        val envReleaseTag = System.getenv("LATEST_RELEASE_TAG") ?: System.getenv("RELEASE_TAG")
+
+        val gitLatestTag = runCatching {
+            val proc = ProcessBuilder("git", "describe", "--tags", "--abbrev=0").start()
+            proc.inputStream.bufferedReader().readText().trim()
+        }.getOrDefault("")
+
+        val latestReleaseTag = when {
+            !envReleaseTag.isNullOrBlank() -> envReleaseTag
+            gitLatestTag.isNotBlank() -> gitLatestTag
+            else -> "release-1"
+        }
+
+        val resolvedVersionName = when {
+            !envVersionName.isNullOrBlank() -> envVersionName
+            !buildRunNumber.isNullOrBlank() -> "Action-$buildRunNumber"
+            else -> "release-1"
+        }
+
+        versionCode = (buildRunNumber?.toIntOrNull() ?: 1)
+        versionName = resolvedVersionName
 
         buildConfigField("String", "GIT_COMMIT_SHA", "\"$gitCommitSha\"")
-        buildConfigField("String", "GITHUB_RUN_NUMBER", "\"$buildRunNumber\"")
+        buildConfigField("String", "GITHUB_RUN_NUMBER", "\"${buildRunNumber ?: ""}\"")
+        buildConfigField("String", "BUILT_LATEST_RELEASE_TAG", "\"$latestReleaseTag\"")
     }
 
     signingConfigs {
@@ -74,6 +95,7 @@ kotlin {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.documentfile)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

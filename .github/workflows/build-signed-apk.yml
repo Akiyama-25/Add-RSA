@@ -161,6 +161,21 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: Configure Action Versioning and Release Tag Strategy
+        run: |
+          set -euo pipefail
+          git fetch --tags --force 2>/dev/null || true
+          LATEST_TAG=$(git tag -l "release*" --sort=-v:refname | head -n 1 || true)
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="release-1"
+          fi
+          ACTION_VERSION="Action-${GITHUB_RUN_NUMBER}"
+          echo "LATEST_RELEASE_TAG=${LATEST_TAG}" >> $GITHUB_ENV
+          echo "APP_VERSION_NAME=${ACTION_VERSION}" >> $GITHUB_ENV
+          echo ">>> Configured Action Versioning:"
+          echo "    versionName: ${ACTION_VERSION}"
+          echo "    cached latest release tag: ${LATEST_TAG}"
+
       - name: Assemble Release APK
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
