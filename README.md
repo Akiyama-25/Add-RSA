@@ -1,7 +1,9 @@
 # Add RSA (Akari.Add.RSA)
 
-> 为 Duck ToolBox 本地签发的 RKP Keybox 快速补全 AOSP RSA 证书，完美通过 Duck Detector TEE 检测。
+> Quickly blend AOSP RSA certificates into locally provisioned RKP Keyboxes from Duck ToolBox to pass Duck Detector TEE attestation simulation.  
 > Fast, Secure Keybox RSA Blender for Android TEE Attestation Simulation.
+
+[English](README.md) | [简体中文](README_zh-CN.md) | [繁體中文](README_zh-TW.md) | [粵語](README_zh-HK.md) | [日本語](README_ja.md)
 
 [![Build Signed APK](https://github.com/Akiyama-25/Add-RSA/actions/workflows/build-signed-apk.yml/badge.svg)](https://github.com/Akiyama-25/Add-RSA/actions/workflows/build-signed-apk.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -9,59 +11,67 @@
 
 ---
 
-## 📖 核心原理与设计背景 (Background & Mechanism)
+## 📖 Background & Mechanism
 
-在现代 Android 12+ / 13+ KeyMint 体系下，Google 推行的 **RKP（Remote Key Provisioning，远程密钥配置）** 规范默认仅签发 **ECDSA（NIST P-256）** 算法证书，不再签发 RSA 证书。
+Under modern Android 12+ / 13+ KeyMint architecture, Google's **RKP (Remote Key Provisioning)** standard provisions only **ECDSA (NIST P-256)** algorithm certificates by default and deprecates provisioning of RSA certificates.
 
-当用户通过 **Duck ToolBox** 的 RKP Workbench 在本地向 Google 申请签发 Keybox 时，导出的 `Local RKP.xml` 天生缺少 `<Key algorithm="rsa">` 节点。虽然 ECDSA 拥有合法的 Google 硬件级信任链，但在配合 `teesim` 模拟 TEE 时：
-1. Android Keystore 及 `Duck Detector` 会进行全面的硬件密码学能力探针（包含 `Single-use EC`、`ECDH`、`RSA-PSS`、`RSA-OAEP` 等）；
-2. 缺失 RSA 节点会导致 Keystore 操作失败并抛出异常，触发 TEE 异常报警。
+When users request a local Keybox via the RKP Workbench in **Duck ToolBox**, the exported `Local RKP.xml` naturally lacks a `<Key algorithm="rsa">` block. Although ECDSA provides a legitimate Google hardware root of trust, when combined with `teesim` for TEE simulation:
+1. Android Keystore and `Duck Detector` perform comprehensive hardware cryptographic probes (including `Single-use EC`, `ECDH`, `RSA-PSS`, `RSA-OAEP`, etc.);
+2. The absence of an RSA node causes Keystore operations to fail and raise exceptions, triggering TEE anomaly alerts.
 
-**Add RSA** 将真实的 Google 官方 ECDSA 证书链与预置的 AOSP RSA 软件认证根自动混合：
-- **ECDSA 证书链**：维持官方背书，提供真实的硬件 TEE 根与设备认证（`Trust: Google | Security: TEE`）；
-- **RSA 密钥块**：垫底承接所有 RSA 加解密调用，满足 Keystore 双算法硬性要求；
-- **混合结果**：在 Duck Detector 中完美点亮 TEE 绿灯！
-
----
-
-## ✨ 核心特性 (Key Features)
-
-- **🎨 Material 3 Expressive (M3E) 设计**：
-  采用最新的 M3 Expressive 设计规范，支持动态色彩（Dynamic Color）、圆角 Squircle 容器、触觉动画反馈与自适应暗色模式。
-- **🚀 系统分享即时补全**：
-  支持通过系统分享（Share Sheet）直接向应用传入 `.xml` 文件，自动解析 ECDSA 凭证并一键补全导出。
-- **🔒 ECDSA 证书零落盘保护 (Zero-Disk Footprint)**：
-  用户的 ECDSA 证书**绝不硬编码、绝不写入持久化存储**。所有凭据仅在易失性内存中暂存，导出混合证书后立即自毁卸载，杜绝泄露风险。
-- **🛡️ 全量 AES-256-GCM 静态加密**：
-  所有保存在应用内的 RSA 证书（包括预置编码的 AOSP 默认证书及用户导入的自定义 RSA 密钥）均通过 AES-256-GCM 算法加密存储。
-- **🌐 全面多语言国际化**：
-  原生支持 **简体中文**、**繁体中文（台湾/香港）**、**英语 (English)**、**日语 (日本語)**。
-- **⚙️ TargetSDK 37**：
-  面向最新 Android 系统深度适配，提供边缘到边缘（Edge-to-Edge）全面屏体验。
+**Add RSA** automatically blends official Google ECDSA certificate chains with the embedded AOSP RSA software attestation root:
+- **ECDSA Certificate Chain**: Preserves official Google hardware backing and device attestation (`Trust: Google | Security: TEE`);
+- **RSA Key Block**: Serves as a baseline fallback for all RSA encryption/decryption requests, satisfying Keystore dual-algorithm requirements;
+- **Result**: Perfectly achieves green TEE pass status in Duck Detector!
 
 ---
 
-## 📲 使用说明 (Quick Start)
+## ✨ Key Features
 
-1. 在 **Duck ToolBox** 的 RKP 工作台签发获取本地 Keybox（`.xml`）。
-2. 在文件管理器中选中该 `.xml` 文件，点击 **分享 -> Add RSA**（或直接打开应用点击“选择 ECDSA Keybox”）。
-3. 检查设备 ID 与证书层级无误后，点击 **【混合并导出】**。
-4. 可选择直接保存为文件、复制到剪贴板，或通过系统分享发送至 MT 管理器 / 文件管理器并覆盖至 `/data/adb/teesim/keybox.xml`。
-5. 导出完成后，应用自动清空临时证书缓存。
+- **🎨 Material 3 Expressive (M3E) Modern UI**:
+  Built strictly with M3 Expressive design principles: dynamic color, rounded cards, tactile animation feedback, and adaptive dark mode.
+- **📱 Horizontal Swipe Page Transitions**:
+  Seamlessly swipe left and right across all primary tabs (Quick Blend, RSA Keys, Settings) with bidirectional synchronisation to the bottom navigation bar.
+- **🔙 Predictive Back Gestures**:
+  Fluid secondary screen transitions featuring full Android 14+ / AOSP predictive back gestures: real-time finger-following card scaling, corner morphing, parallax background reveal, and zero-overshoot safety clamping.
+- **📐 Responsive Adaptive Layout (Adaptive Stacking)**:
+  Dialog action buttons and card details intelligently sense horizontal space constraints; when width is restricted, action rows smoothly stack vertically to prevent text clipping.
+- **🌐 In-App Per-App Language Switcher**:
+  Dedicated in-app language settings supporting immediate runtime switching between **System Default**, **Simplified Chinese**, **Traditional Chinese**, **Cantonese (粵語)**, **English**, and **Japanese (日本語)**.
+- **🔄 Update Checker & Channel Selection**:
+  Check for updates with flexible channel selection: **Release (Stable)** or **Action (CI Build)**. Action builds automatically cache the baseline Release tag to detect newer releases.
+- **🔒 Zero-Disk Footprint for ECDSA**:
+  Your personal ECDSA certificates are **never hardcoded and never persisted to storage**. ECDSA data exists solely in volatile RAM during assembly and is purged immediately upon export.
+- **🛡️ AES-256-GCM Storage Encryption**:
+  All stored RSA credentials (the built-in AOSP software root and imported custom RSA keys) are encrypted with AES-256-GCM at rest.
+- **🚀 System Share Sheet & Direct File Open**:
+  Equipped with intent filters for `.xml` (`ACTION_SEND` and `ACTION_VIEW`), supporting instant import directly from Duck ToolBox or file managers.
+- **⚙️ TargetSDK 37**:
+  Fully optimized for modern Android versions with edge-to-edge system bar integration.
 
 ---
 
-## 🛠️ CI/CD 构建架构 (GitHub Actions & InstaBox)
+## 📲 Quick Start
 
-项目配置了完整的自动化构建流，所有编译任务均交由 **InstaBox** 自托管运行器执行：
-
-- **普通构建工作流 (`build-signed-apk.yml`)**：
-  监听 `main` 分支推送，自动唤醒 InstaBox 实例，配置 JDK 21 与 Platform SDK 37，通过 GitHub Actions Cache 持久化签名密钥，产出带签名的 Release APK。
-- **Release 发布工作流 (`release-signed-apk.yml`)**：
-  监听 Git Tag 触发，自动编译、签名并发布 GitHub Release，同时上传校验哈希值与密钥备份。
+1. Provision a local Keybox (`.xml`) using **Duck ToolBox**'s RKP Workbench.
+2. In your file manager, select the `.xml` file and tap **Share -> Add RSA** (or launch the app and tap "Select ECDSA Keybox").
+3. Verify the device ID and certificate chain levels, then tap **[Blend & Export]**.
+4. In the responsive dialog, save directly to storage, copy to clipboard, or share to MT Manager / file manager and overwrite `/data/adb/teesim/keybox.xml`.
+5. Upon export completion, transient memory cache is automatically purged.
 
 ---
 
-## 📄 开源许可 (License)
+## 🛠️ CI/CD Build Architecture (GitHub Actions & InstaBox)
 
-本项目遵循 [MIT 许可证](LICENSE) 开源。
+The project includes an automated pipeline where all build operations run on the user's **InstaBox** self-hosted runner:
+
+- **Continuous Integration Workflow (`build-signed-apk.yml`)**:
+  Triggers on pushes to `main`, wakes the InstaBox runner, sets up JDK 21 and Platform SDK 37, builds a signed APK versioned as `Action-<run_number>`, and uploads signed APK artifacts.
+- **Release Publishing Workflow (`release-signed-apk.yml`)**:
+  Configured strictly for manual invocation (`workflow_dispatch`). Automatically adopts the input tag as the release version, increments `versionCode` in the project configuration by 1, builds and publishes the signed release APK to GitHub Releases, and commits the updated `versionCode` back to the repository.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
