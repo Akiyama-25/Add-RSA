@@ -42,10 +42,17 @@ android {
             else -> "release-1"
         }
 
+        val gitCommitCountSinceTag = runCatching {
+            val tag = if (latestReleaseTag.isNotBlank()) latestReleaseTag else "HEAD"
+            val proc = ProcessBuilder("git", "rev-list", "--count", "$tag..HEAD").start()
+            val count = proc.inputStream.bufferedReader().readText().trim().toIntOrNull() ?: 1
+            count.coerceIn(1, 99)
+        }.getOrDefault(1)
+
         val configVersionCode = 300
         val envVersionCode = System.getenv("APP_VERSION_CODE")?.toIntOrNull()
-        val actionOffset = buildRunNumber?.toIntOrNull()?.let { (it % 100).takeIf { n -> n > 0 } ?: 1 } ?: 0
-        versionCode = envVersionCode ?: (if (!buildRunNumber.isNullOrBlank()) configVersionCode + actionOffset else configVersionCode)
+        val actionOffset = if (!buildRunNumber.isNullOrBlank()) gitCommitCountSinceTag else 0
+        versionCode = envVersionCode ?: (configVersionCode + actionOffset)
         versionName = resolvedVersionName
 
         buildConfigField("String", "GIT_COMMIT_SHA", "\"$gitCommitSha\"")
