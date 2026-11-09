@@ -38,9 +38,10 @@ android {
             else -> "release-1"
         }
 
-        val configVersionCode = 2
+        val configVersionCode = 200
         val envVersionCode = System.getenv("APP_VERSION_CODE")?.toIntOrNull()
-        versionCode = envVersionCode ?: (buildRunNumber?.toIntOrNull() ?: configVersionCode)
+        val actionOffset = buildRunNumber?.toIntOrNull()?.let { (it % 100).takeIf { n -> n > 0 } ?: 1 } ?: 0
+        versionCode = envVersionCode ?: (if (!buildRunNumber.isNullOrBlank()) configVersionCode + actionOffset else configVersionCode)
         versionName = resolvedVersionName
 
         buildConfigField("String", "GIT_COMMIT_SHA", "\"$gitCommitSha\"")

@@ -169,11 +169,20 @@ jobs:
           if [ -z "$LATEST_TAG" ]; then
             LATEST_TAG="release-1"
           fi
+          CONFIG_CODE=$(grep -oE "configVersionCode[[:space:]]*=[[:space:]]*[0-9]+" app/build.gradle.kts | grep -oE "[0-9]+" || echo "200")
+          ACTION_RUN="${GITHUB_RUN_NUMBER:-1}"
+          OFFSET=$(( ACTION_RUN % 100 ))
+          if [ "$OFFSET" -eq 0 ]; then
+            OFFSET=1
+          fi
+          ACTION_VERSION_CODE=$(( CONFIG_CODE + OFFSET ))
           ACTION_VERSION="Action-${GITHUB_RUN_NUMBER}"
           echo "LATEST_RELEASE_TAG=${LATEST_TAG}" >> $GITHUB_ENV
           echo "APP_VERSION_NAME=${ACTION_VERSION}" >> $GITHUB_ENV
+          echo "APP_VERSION_CODE=${ACTION_VERSION_CODE}" >> $GITHUB_ENV
           echo ">>> Configured Action Versioning:"
           echo "    versionName: ${ACTION_VERSION}"
+          echo "    versionCode: ${ACTION_VERSION_CODE} (base ${CONFIG_CODE} + offset ${OFFSET})"
           echo "    cached latest release tag: ${LATEST_TAG}"
 
       - name: Assemble Release APK
