@@ -27,6 +27,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -131,15 +133,12 @@ fun MainAppHost(
     onImportUri: (Uri) -> Unit
 ) {
     var currentScreen by remember { mutableStateOf(AppScreen.Main) }
-    var selectedTab by remember { mutableIntStateOf(0) }
 
     PredictiveBackContainer(
         isOverlayOpen = currentScreen != AppScreen.Main,
         onCloseOverlay = { currentScreen = AppScreen.Main },
         backgroundContent = {
             MainTabsScreen(
-                selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it },
                 onImportUri = onImportUri,
                 onNavigateScreen = { currentScreen = it }
             )
@@ -158,12 +157,13 @@ fun MainAppHost(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainTabsScreen(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
     onImportUri: (Uri) -> Unit,
     onNavigateScreen: (AppScreen) -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
+
     val ecdsaData by TransientEcdsaManager.ecdsaState.collectAsStateWithLifecycle()
     val rsaKeys by RsaKeyManager.rsaKeysState.collectAsStateWithLifecycle()
     val activeKeyId by RsaKeyManager.activeKeyIdState.collectAsStateWithLifecycle()
@@ -253,86 +253,87 @@ fun MainTabsScreen(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer
             ) {
                 NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { onTabSelected(0) },
+                    selected = pagerState.currentPage == 0,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(0)
+                        }
+                    },
                     icon = { Icon(Icons.Default.Tune, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_blend)) }
                 )
                 NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { onTabSelected(1) },
+                    selected = pagerState.currentPage == 1,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(1)
+                        }
+                    },
                     icon = { Icon(Icons.Default.Key, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_rsa)) }
                 )
                 NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { onTabSelected(2) },
+                    selected = pagerState.currentPage == 2,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(2)
+                        }
+                    },
                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_settings)) }
                 )
             }
         }
     ) { paddingValues ->
-        Box(
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-        ) {
-            AnimatedContent(
-                targetState = selectedTab,
-                transitionSpec = {
-                    if (targetState > initialState) {
-                        (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
-                            slideOutHorizontally { width -> -width } + fadeOut()
-                        )
-                    } else {
-                        (slideInHorizontally { width -> -width } + fadeIn()).togetherWith(
-                            slideOutHorizontally { width -> width } + fadeOut()
-                        )
-                    }
-                },
-                label = "TabAnimatedTransition"
-            ) { tab ->
-                when (tab) {
-                    0 -> QuickBlendTab(
-                        ecdsaData = ecdsaData,
-                        activeKey = activeKey,
-                        onSelectEcdsa = { pickEcdsaLauncher.launch(arrayOf("text/xml", "application/xml", "*/*")) },
-                        onManageRsa = { onTabSelected(1) },
-                        onBlend = {
-                            val currentEcdsa = ecdsaData
-                            if (currentEcdsa == null) {
-                                Toast.makeText(context, R.string.toast_blend_first, Toast.LENGTH_SHORT).show()
-                                return@QuickBlendTab
-                            }
-                            val rsaXmlResult = RsaKeyManager.getActiveRsaXml(context)
-                            if (rsaXmlResult.isFailure) {
-                                Toast.makeText(context, "Error reading RSA: ${rsaXmlResult.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
-                                return@QuickBlendTab
-                            }
-                            val rsaXml = rsaXmlResult.getOrThrow()
-                            KeyboxXmlParser.blendKeybox(currentEcdsa.rawXml, rsaXml)
-                                .onSuccess { result ->
-                                    blendResultDialog = result
-                                }
-                                .onFailure { err ->
-                                    Toast.makeText(context, "Blend failed: ${err.message}", Toast.LENGTH_LONG).show()
-                                }
+        ) { page ->
+            when (page) {
+                0 -> QuickBlendTab(
+                    ecdsaData = ecdsaData,
+                    activeKey = activeKey,
+                    onSelectEcdsa = { pickEcdsaLauncher.launch(arrayOf("text/xml", "application/xml", "*/*")) },
+                    onManageRsa = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(1)
                         }
-                    )
-                    1 -> RsaKeysTab(
-                        rsaKeys = rsaKeys,
-                        activeKeyId = activeKeyId,
-                        onSetActive = { id -> RsaKeyManager.setActiveKey(context, id) },
-                        onDelete = { id -> RsaKeyManager.deleteCustomRsaKey(context, id) },
-                        onImportClick = { pickRsaLauncher.launch(arrayOf("text/xml", "application/xml", "*/*")) }
-                    )
-                    2 -> SettingsTab(
-                        onOpenLanguage = { onNavigateScreen(AppScreen.LanguageSettings) },
-                        onOpenUpdate = { onNavigateScreen(AppScreen.UpdateCheck) },
-                        onOpenSecurity = { onNavigateScreen(AppScreen.SecurityDetails) }
-                    )
-                }
+                    },
+                    onBlend = {
+                        val currentEcdsa = ecdsaData
+                        if (currentEcdsa == null) {
+                            Toast.makeText(context, R.string.toast_blend_first, Toast.LENGTH_SHORT).show()
+                            return@QuickBlendTab
+                        }
+                        val rsaXmlResult = RsaKeyManager.getActiveRsaXml(context)
+                        if (rsaXmlResult.isFailure) {
+                            Toast.makeText(context, "Error reading RSA: ${rsaXmlResult.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                            return@QuickBlendTab
+                        }
+                        val rsaXml = rsaXmlResult.getOrThrow()
+                        KeyboxXmlParser.blendKeybox(currentEcdsa.rawXml, rsaXml)
+                            .onSuccess { result ->
+                                blendResultDialog = result
+                            }
+                            .onFailure { err ->
+                                Toast.makeText(context, "Blend failed: ${err.message}", Toast.LENGTH_LONG).show()
+                            }
+                    }
+                )
+                1 -> RsaKeysTab(
+                    rsaKeys = rsaKeys,
+                    activeKeyId = activeKeyId,
+                    onSetActive = { id -> RsaKeyManager.setActiveKey(context, id) },
+                    onDelete = { id -> RsaKeyManager.deleteCustomRsaKey(context, id) },
+                    onImportClick = { pickRsaLauncher.launch(arrayOf("text/xml", "application/xml", "*/*")) }
+                )
+                2 -> SettingsTab(
+                    onOpenLanguage = { onNavigateScreen(AppScreen.LanguageSettings) },
+                    onOpenUpdate = { onNavigateScreen(AppScreen.UpdateCheck) },
+                    onOpenSecurity = { onNavigateScreen(AppScreen.SecurityDetails) }
+                )
             }
         }
     }

@@ -20,8 +20,8 @@ object LanguageManager {
     val supportedLanguages = listOf(
         LanguageOption("system", R.string.lang_system_default, "跟随系统 / System Default"),
         LanguageOption("zh-CN", R.string.lang_zh_cn, "简体中文"),
-        LanguageOption("zh-HK", R.string.lang_zh_hk, "繁體中文 (香港)"),
-        LanguageOption("zh-TW", R.string.lang_zh_tw, "繁體中文 (台灣)"),
+        LanguageOption("zh-HK", R.string.lang_zh_hk, "粵語"),
+        LanguageOption("zh-TW", R.string.lang_zh_tw, "繁體中文"),
         LanguageOption("en", R.string.lang_en, "English"),
         LanguageOption("ja", R.string.lang_ja, "日本語")
     )
