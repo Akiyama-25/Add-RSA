@@ -38,7 +38,7 @@ android {
             else -> "release-1"
         }
 
-        val configVersionCode = 200
+        val configVersionCode = 300
         val envVersionCode = System.getenv("APP_VERSION_CODE")?.toIntOrNull()
         val actionOffset = buildRunNumber?.toIntOrNull()?.let { (it % 100).takeIf { n -> n > 0 } ?: 1 } ?: 0
         versionCode = envVersionCode ?: (if (!buildRunNumber.isNullOrBlank()) configVersionCode + actionOffset else configVersionCode)
