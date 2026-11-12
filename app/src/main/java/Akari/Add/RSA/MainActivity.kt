@@ -95,7 +95,13 @@ class MainActivity : AppCompatActivity() {
         val action = intent.action
         val uri: Uri? = when (action) {
             Intent.ACTION_SEND -> {
-                intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                val streamUri = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                }
+                streamUri
                     ?: intent.clipData?.getItemAt(0)?.uri
                     ?: intent.data
             }
@@ -108,6 +114,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadXmlFromUri(uri: Uri) {
+        val scheme = uri.scheme?.lowercase()
+        if (scheme != "content" && scheme != "file") {
+            Toast.makeText(this, "Unsupported URI scheme: $scheme", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val path = uri.path
+        if (path != null) {
+            try {
+                val normalized = java.nio.file.FileSystems.getDefault().getPath(path).normalize()
+                if (normalized.startsWith("/data")) {
+                    Toast.makeText(this, "Access to private paths is blocked", Toast.LENGTH_SHORT).show()
+                    return
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Invalid URI path: ${e.message}", Toast.LENGTH_SHORT).show()
+                return
+            }
+        }
+
         runCatching {
             contentResolver.openInputStream(uri)?.use { stream ->
                 val xmlContent = stream.bufferedReader(Charsets.UTF_8).readText()
