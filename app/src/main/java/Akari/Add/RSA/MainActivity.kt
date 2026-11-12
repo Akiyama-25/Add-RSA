@@ -109,7 +109,16 @@ class MainActivity : AppCompatActivity() {
             else -> null
         }
         if (uri != null) {
-            loadXmlFromUri(uri)
+            try {
+                val path = uri.path ?: ""
+                val normalized = java.nio.file.FileSystems.getDefault().getPath(path).normalize()
+                if (normalized.startsWith("/data")) {
+                    throw SecurityException("Access to /data is prohibited")
+                }
+                loadXmlFromUri(uri)
+            } catch (e: SecurityException) {
+                Toast.makeText(this, "Access to private paths is blocked", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -120,21 +129,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val path = uri.path
-        if (path != null) {
-            try {
-                val normalized = java.nio.file.FileSystems.getDefault().getPath(path).normalize()
-                if (normalized.startsWith("/data")) {
-                    Toast.makeText(this, "Access to private paths is blocked", Toast.LENGTH_SHORT).show()
-                    return
-                }
-            } catch (e: Exception) {
-                Toast.makeText(this, "Invalid URI path: ${e.message}", Toast.LENGTH_SHORT).show()
-                return
+        try {
+            val path = uri.path ?: ""
+            val normalized = java.nio.file.FileSystems.getDefault().getPath(path).normalize()
+            if (normalized.startsWith("/data")) {
+                throw SecurityException("Access to /data is prohibited")
             }
-        }
 
-        runCatching {
             contentResolver.openInputStream(uri)?.use { stream ->
                 val xmlContent = stream.bufferedReader(Charsets.UTF_8).readText()
                 TransientEcdsaManager.loadEcdsa(xmlContent).onSuccess {
@@ -143,7 +144,9 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "${getString(R.string.error_invalid_xml)}: ${err.message}", Toast.LENGTH_LONG).show()
                 }
             }
-        }.onFailure { e ->
+        } catch (e: SecurityException) {
+            Toast.makeText(this, "Access to private paths is blocked", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
             Toast.makeText(this, "Failed to read file: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
